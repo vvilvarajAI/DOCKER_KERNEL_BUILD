@@ -29,22 +29,29 @@ get_default_kernel() {
 # Function to download and extract DCD kernel
 get_dcd_kernel() {
     cd "$BASE_DIR"
-    echo "Downloading DCD kernel..."
-    wget https://github.com/weiny2/linux-kernel/archive/refs/heads/dcd-v4-2024-10-04.zip -O dcd-kernel.zip
-    if [ $? -ne 0 ]; then
-        echo "Failed to download DCD kernel from GitHub"
-        echo "Trying alternative method..."
-        curl -L https://github.com/weiny2/linux-kernel/archive/refs/heads/dcd-v4-2024-10-04.zip -o dcd-kernel.zip
+    if [[ "${KERNEL_VERSION:0:3}" != "dcd" ]]; then
+        echo "Error: For DCD kernel source, KERNEL_VERSION must start with 'dcd'"
+        exit 1
     fi
-    
-    if [ ! -f dcd-kernel.zip ]; then
+
+    echo "Downloading DCD kernel for version $KERNEL_VERSION..."
+    ZIP_FILE="${KERNEL_VERSION}.zip"
+    wget "https://github.com/weiny2/linux-kernel/archive/refs/heads/${KERNEL_VERSION}.zip" -O "$ZIP_FILE" || \
+    curl -L "https://github.com/weiny2/linux-kernel/archive/refs/heads/${KERNEL_VERSION}.zip" -o "$ZIP_FILE"
+
+    if [ ! -f "$ZIP_FILE" ]; then
         echo "Failed to download DCD kernel"
         exit 1
     fi
-    
+
     echo "Extracting DCD kernel..."
-    unzip -q dcd-kernel.zip
-    mv linux-kernel-dcd-v4-2024-10-04 linux-kernel
+    unzip -q "$ZIP_FILE"
+    DIR_NAME="linux-kernel-${KERNEL_VERSION}"
+    if [ ! -d "$DIR_NAME" ]; then
+        echo "Extraction failed: directory $DIR_NAME not found"
+        exit 1
+    fi
+    mv "$DIR_NAME" linux-kernel
 }
 
 # Download and extract kernel based on source selection
